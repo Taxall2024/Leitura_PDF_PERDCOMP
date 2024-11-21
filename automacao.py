@@ -26,13 +26,11 @@ data['cod_perdcomp_clean'] = data['cod_perdcomp'].str.replace(r'[^\w]', '', rege
 data['data_transmissao'] = pd.to_datetime(data['data_transmissao'], dayfirst=True)
 data_filtrada = data.loc[data['data_transmissao'] > '2019-01-01'].reset_index()
 #start_index = 73  # Começar a partir do índice desejado
-data_filtrada = data_filtrada.iloc[-1]
+data_filtrada = data_filtrada.iloc[-1:]
 
 base_path = r"C:\Users\hailleen.gonzalez\Documents\LendoPDF\PDF_Extraidos"
 if not os.path.exists(base_path):
     os.makedirs(base_path)
-
-resultados = []
 
 with SB(uc=True, test=True) as sb: # , disable_csp=True
     ecac_site = 'https://cav.receita.fazenda.gov.br' # Site oficial do eCAC
@@ -117,22 +115,18 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
                 sb.sleep(0.5)
                 sb.send_keys('//*[@id="numeroPerdcomp"]', perdcomp)
                 sb.sleep(0.5)
-                 
-                mensagem = '//*[@id="page-content-wrapper"]/perdcomp-tela-inicial/div/perdcomp-tabs/perdcomp-tab[2]/div/perdcomp-listar-docs-enviados'
+
                 # Função para tentar clicar nos botões de download
                 def try_download_buttons(sb, download_xpaths):
-                    if sb.wait_for_element_visible(mensagem)==True:
-                        print("PERDCOMP não encontrada")
-                    if sb.wait_for_element_visible(mensagem)==False:
-                        for xpath in download_xpaths:
-                            try:
-                                sb.wait_for_element_visible(xpath, timeout=5)
-                                sb.click(xpath)
-                                sb.sleep(5)
-                                return True  # Sucesso no clique
-                            except Exception:
-                                continue
-                        return False  # Falha em todos os cliques
+                    for xpath in download_xpaths:
+                        try:
+                            sb.wait_for_element_visible(xpath, timeout=5)
+                            sb.click(xpath)
+                            sb.sleep(5)
+                            return True  # Sucesso no clique
+                        except Exception:
+                            continue
+                    return False  # Falha em todos os cliques
 
                 # XPaths dos botões de download
                 download_xpaths = [
@@ -152,21 +146,15 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
                     if os.path.exists(destination):
                         os.remove(destination)  # Remove o arquivo existente para sobrescrever
                     shutil.move(downloaded_file, destination)
-                    status_salvo = True
                     print(f"PDF salvo em: {destination}")
                 else:
                     print(f"PDF {perdcomp_clean}.pdf não encontrado na pasta de downloads. Tentando novamente...")
-                    mensagem_perdcomp = f"Erro ao processar: {perdcomp_clean}"
                     sb.refresh()
                     #sb.wait_for_element_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
                     sb.click_if_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
                     sb.click('//*[@id="myTab"]/li[2]')
-                resultados.append({
-            "Índice": index,
-            "PERDCOMP Clean": perdcomp_clean,
-            "Salvo": status_salvo,
-            "Mensagem": mensagem_perdcomp
-        })
+
+
 
             # Atualiza a página após cada download
             sb.refresh()
@@ -177,12 +165,8 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
         except Exception as e:
             print(f"Erro ao processar PERDCOMP {perdcomp}: {e}")
             sb.refresh()
-            sb.wait_for_element_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
+            #sb.wait_for_element_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
             sb.click_if_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
             sb.click('//*[@id="myTab"]/li[2]')
             continue
-            
-
-    df_resultados = pd.DataFrame(resultados)
-    print(df_resultados)
-    df_resultados.to_excel(r"C:\Users\hailleen.gonzalez\Documents\LendoPDF\Tabela_resultados.xlsx", index=False)
+    
