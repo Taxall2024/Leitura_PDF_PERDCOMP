@@ -26,7 +26,7 @@ data['cod_perdcomp_clean'] = data['cod_perdcomp'].str.replace(r'[^\w]', '', rege
 data['data_transmissao'] = pd.to_datetime(data['data_transmissao'], dayfirst=True)
 data_filtrada = data.loc[data['data_transmissao'] > '2019-01-01'].reset_index()
 #start_index = 73  # Começar a partir do índice desejado
-data_filtrada = data_filtrada.iloc[5:]
+data_filtrada = data_filtrada.iloc[-10:]
 
 base_path = r"C:\Users\hailleen.gonzalez\Documents\LendoPDF\PDF_Extraidos"
 if not os.path.exists(base_path):
@@ -111,18 +111,20 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
             attempts = 0
 
             while not os.path.exists(destination) and attempts < max_attempts:
-                attempts += 1  # Incrementa o contador de tentativas
+                attempts += 1 # Incrementa o contador de tentativas
                 print(f"Tentativa {attempts}/{max_attempts} para baixar PERDCOMP {perdcomp}")
 
                 try:
                     # Aguarda e insere o código PERDCOMP no campo de entrada
                     sb.wait_for_element_visible('//*[@id="numeroPerdcomp"]')
                     sb.cdp.mouse_click('//*[@id="numeroPerdcomp"]')
-                    sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.HOME)
-                    sb.sleep(0.5)
+                    sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.CLEAR)
+                    sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.CONTROL + 'a') # Seleciona todo o texto
+                    sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.CLEAR) # Deleta o texto selecionado
+                    
+                    sb.sleep(3)
                     sb.send_keys('//*[@id="numeroPerdcomp"]', perdcomp)
-                    sb.sleep(0.5)
-
+                    sb.sleep(3)
                     # Função para tentar clicar nos botões de download
                     def try_download_buttons(sb, download_xpaths):
                         for xpath in download_xpaths:
@@ -158,15 +160,16 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
                     else:
                         print(f"PDF {perdcomp_clean}.pdf não encontrado na pasta de downloads. Tentando novamente...")
                         sb.refresh()
-                        #sb.wait_for_element_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
+                        sb.wait_for_element_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
                         sb.click_if_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
                         sb.click('//*[@id="myTab"]/li[2]')
+                        sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.CONTROL + "a")
 
                 except Exception as e:
                     print(f"Erro na tentativa {attempts} para baixar PERDCOMP {perdcomp}: {e}")
-                    sb.refresh()
                     sb.click_if_visible('//*[@id="sidebar-wrapper"]/ul/li[3]/a/div/div[2]')
                     sb.click('//*[@id="myTab"]/li[2]')
+                    sb.send_keys('//*[@id="numeroPerdcomp"]', Keys.CONTROL + "a")
                     continue
 
             if attempts >= max_attempts:
