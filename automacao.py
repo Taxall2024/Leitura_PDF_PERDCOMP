@@ -26,7 +26,7 @@ data['cod_perdcomp_clean'] = data['cod_perdcomp'].str.replace(r'[^\w]', '', rege
 data['data_transmissao'] = pd.to_datetime(data['data_transmissao'], dayfirst=True)
 data_filtrada = data.loc[data['data_transmissao'] > '2019-01-01'].reset_index()
 #start_index = 73  # Começar a partir do índice desejado
-data_filtrada = data_filtrada.iloc[-5:]
+data_filtrada = data_filtrada.iloc[5:]
 
 base_path = r"C:\Users\hailleen.gonzalez\Documents\LendoPDF\PDF_Extraidos"
 if not os.path.exists(base_path):
@@ -110,7 +110,7 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
             max_attempts = 3  # Definir o número máximo de tentativas
             attempts = 0
 
-            while not os.path.exists(destination):
+            while not os.path.exists(destination) and attempts < max_attempts:
                 attempts += 1  # Incrementa o contador de tentativas
                 print(f"Tentativa {attempts}/{max_attempts} para baixar PERDCOMP {perdcomp}")
 
@@ -154,6 +154,7 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
                             os.remove(destination)  # Remove o arquivo existente para sobrescrever
                         shutil.move(downloaded_file, destination)
                         print(f"PDF salvo em: {destination}")
+                        break
                     else:
                         print(f"PDF {perdcomp_clean}.pdf não encontrado na pasta de downloads. Tentando novamente...")
                         sb.refresh()
@@ -170,6 +171,7 @@ with SB(uc=True, test=True) as sb: # , disable_csp=True
 
             if attempts >= max_attempts:
                 print(f"Não foi possível processar PERDCOMP {perdcomp} após {max_attempts} tentativas. Pulando para o próximo.")
+                continue
 
             # Atualiza a página após cada download
             sb.refresh()
